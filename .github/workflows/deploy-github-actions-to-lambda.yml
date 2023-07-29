@@ -1,0 +1,49 @@
+name: AWS Deploy
+on:
+  push:
+    branches:
+      - develop
+      - release
+env:
+  AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+  AWS_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+  env-check:
+    if: ${{ github.ref == 'refs/heads/develop' ||  }}
+    steps:
+      - run: echo "Deploying to production server on branch $GITHUB_REF"
+
+  aws-deploy:
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+    steps:
+      - name: Setup GitHubActions workflow
+        uses: actions/checkout@v3
+
+      - name: Setup AWS credential
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ap-northeast-1
+
+      - name: Setup Python version ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Deploy to Lambda
+        working-directory: fetch-user-id
+        run: |
+          python -m pip install --upgrade pip
+          pip install awscli
+          pip install -r requirements.txt -t Package
+          zip -r lambda_function.zip .
+          aws lambda update-function-code --function-name sample-github-actions--python-lambda --zip-file fileb://lambda_function.zip --publish
