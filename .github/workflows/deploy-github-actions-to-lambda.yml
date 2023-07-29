@@ -1,4 +1,4 @@
-name: AWS Deploy
+name: AWS Lambda Deploy test
 on:
   push:
     branches:
@@ -9,21 +9,20 @@ env:
   AWS_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
 
 jobs:
-  deploy:
+  env-check:
+
+  aws-deploy:
+    # if: |
+    #   ${{ github.ref }} == 'refs/heads/develop' ||
+    #   ${{ github.ref }} == 'refs/heads/release'
     runs-on: ubuntu-latest
     permissions:
       id-token: write
       contents: read
-
-  env-check:
-    if: ${{ github.ref == 'refs/heads/develop' ||  }}
-    steps:
-      - run: echo "Deploying to production server on branch $GITHUB_REF"
-
-  aws-deploy:
     strategy:
       matrix:
         python-version: ["3.11"]
+
     steps:
       - name: Setup GitHubActions workflow
         uses: actions/checkout@v3
